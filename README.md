@@ -5,7 +5,7 @@
 It is designed to provide simple network diagnostics such as **host availability checks, latency monitoring, and DNS resolution** directly from the terminal.
 
 > 🚧 **NetPulse is currently under development.**  
-> Some features are experimental, incomplete, or subject to change.
+> Source code is currently not publicly available while the project is under active development.
 
 ---
 
