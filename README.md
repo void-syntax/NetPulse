@@ -216,6 +216,9 @@ NetPulse is still under active development.
 
 - [x] CLI interface
 - [x] Host pinging
+- [x] Minimum latency output
+- [x] Average latency output
+- [x] Maximum latency output
 - [x] Latency measurement
 - [x] Packet loss calculation
 - [x] Host monitoring
@@ -227,9 +230,6 @@ NetPulse is still under active development.
 - [ ] JSON export
 - [ ] CSV export
 - [ ] Improved latency accuracy
-- [ ] Minimum latency output
-- [ ] Average latency output
-- [ ] Maximum latency output
 - [ ] Real-time statistics
 - [ ] Multiple host monitoring
 - [ ] Improved error handling
