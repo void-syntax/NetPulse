@@ -1,0 +1,2 @@
+host,interval,checks,results
+127.0.0.1,0.1,1,"[{'check': 1, 'status': 'online', 'latency_ms': 16.715899997507222}]"

@@ -1,0 +1,15 @@
+{
+    "host": "lead-proof-one.vercel.app",
+    "count": 4,
+    "interval": 1.0,
+    "sent": 4,
+    "received": 4,
+    "lost": 0,
+    "packet_loss_percent": 0.0,
+    "latencies_ms": [
+        147.72989999619313,
+        64.86089999089018,
+        76.44019999133889,
+        53.911900002276525
+    ]
+}
