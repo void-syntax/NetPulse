@@ -164,6 +164,33 @@ Press `Ctrl+C` to stop monitoring.
 python netpulse.py dns google.com
 ```
 
+### Save Results to JSON or CSV
+
+You can export results to a file by using the `-o/--output` option and optionally a folder with `-p/--path`.
+
+#### JSON export
+
+```bash
+python netpulse.py ping google.com -c 4 -o results.json
+python netpulse.py dns google.com -o dns-results.json
+```
+
+#### CSV export
+
+```bash
+python netpulse.py ping google.com -c 4 -o results.csv
+python netpulse.py monitor google.com -c 5 -i 2 -o monitor.csv
+```
+
+You can also save output in a specific directory:
+
+```bash
+python netpulse.py ping google.com -c 4 -o results.json -p ./reports
+python netpulse.py ping google.com -c 4 -o results.csv -p ./reports
+```
+
+This is useful for saving diagnostics for later review or reporting.
+
 ---
 
 ## 📊 Example
@@ -224,11 +251,11 @@ NetPulse is still under active development.
 - [x] Host monitoring
 - [x] DNS lookup
 - [x] Windows/Linux support
+- [x] JSON export
+- [x] CSV export
 
 ### Planned
 
-- [ ] JSON export
-- [ ] CSV export
 - [ ] Improved latency accuracy
 - [ ] Real-time statistics
 - [ ] Multiple host monitoring
