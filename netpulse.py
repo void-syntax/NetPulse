@@ -8,8 +8,10 @@ import csv
 import pathlib
 import platform
 
-print("NetPulse: Simple network diagnostic tool")
-print("Version: 1.0")
+from rich import print
+
+print("[bold blue]NetPulse: Simple network diagnostic tool[/bold blue]")
+print("[bold red]Version: 1.0[/bold red]")
 print("Author: Asim")
 print()
 
