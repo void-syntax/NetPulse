@@ -9,15 +9,28 @@ import pathlib
 import platform
 
 from rich import print
+from rich import box
+from rich.console import Console, Group
+from rich.panel import Panel
+from rich.syntax import Syntax
+from rich.table import Table
+from rich.text import Text
 
-print("[bold blue]NetPulse: Simple network diagnostic tool[/bold blue]")
-print("[bold red]Version: 1.0[/bold red]")
-print("Author: Asim")
-print()
+console = Console()
+
+console.print("[bold blue]NetPulse: Simple network diagnostic tool[/bold blue]")
+console.print("[bold red]Version: 1.0[/bold red]")
+console.print("Author: Asim")
+console.print()
 
 parser = argparse.ArgumentParser(description="NetPulse: Simple network diagnostic tool")
 
+#subparsers for commands
+
 subparsers = parser.add_subparsers(dest="command",required=True, help="Available commands")
+
+
+# ping command
 
 ping_parser = subparsers.add_parser("ping", help="Ping a host") #ping
 ping_parser.add_argument("host", type=str, help="Host to ping")
@@ -26,6 +39,8 @@ ping_parser.add_argument("-i", "--interval", type=float, default=1.0, help="Inte
 ping_parser.add_argument("-o", "--output", type=str, help="Output file to save results (JSON or CSV)")
 ping_parser.add_argument("-p", "--path", type=str, help="Path to save the output file")
 
+#command for monitoring
+
 monitor_parser = subparsers.add_parser("monitor", help="Continuously monitor a host") #to monitor
 monitor_parser.add_argument("host", type=str, help="Target host")
 monitor_parser.add_argument("-i", "--interval", type=float, default=5.0, help="Interval between checks")
@@ -33,11 +48,14 @@ monitor_parser.add_argument("-o", "--output", type=str, help="Output file to sav
 monitor_parser.add_argument("-c", "--count", type=int, default=0, help="Number of checks to perform")
 monitor_parser.add_argument("-p", "--path", type=str, help="Path to save the output file")
 
+#dns command
+
 dns_parser = subparsers.add_parser("dns", help="Resolve a domain name") #dns
 dns_parser.add_argument("domain", type=str, help="Domain name to resolve")
 dns_parser.add_argument("-o", "--output", type=str, help="Output file to save results (JSON or CSV)") #python netpulse.py dns example.com -o results.json
 dns_parser.add_argument("-p", "--path", type=str, help="Path to save the output file")
 
+#parse the arguments
 args = parser.parse_args()
 
 #ping function
@@ -72,14 +90,14 @@ def ping_host(host, count, interval, path=None, output=None):
     sent = 0
     received = 0
 
-    print(f"Starting NetPulse for {host}")
-    print(f"Requests: {count}")
-    print(f"Interval: {interval}s")
-    print("-" * 35)
+    console.print(f"Starting NetPulse for {host}")
+    console.print(f"Requests: {count}")
+    console.print(f"Interval: {interval}s")
+    console.print("-" * 35)
 
     for i in range(count):
 
-        print(f"[{i + 1}/{count}] Checking...")
+        console.print(f"[{i + 1}/{count}] Checking...")
         start = time.perf_counter()
         result = subprocess.run(ping_command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         end = time.perf_counter()
@@ -92,10 +110,10 @@ def ping_host(host, count, interval, path=None, output=None):
 
             latencies.append(latency)
 
-            print(f"Host responded: {latency:.2f} ms")
+            console.print(f"Host responded: {latency:.2f} ms")
 
         else:
-            print("Ping failed.")
+            console.print("Ping failed.")
 
         if i < count - 1:
             time.sleep(interval)
@@ -106,13 +124,13 @@ def ping_host(host, count, interval, path=None, output=None):
 
     packet_loss = (lost / sent) * 100
 
-    print()
-    print("Statistics")
-    print("-" * 35)
+    console.print()
+    console.print("Statistics")
+    console.print("-" * 35)
 
-    print(f"Packets: sent:    {sent}")
-    print(f"Packets received: {received}")
-    print(f"Packets loss:     {packet_loss:.2f}%")
+    console.print(f"Packets: sent:    {sent}")
+    console.print(f"Packets received: {received}")
+    console.print(f"Packets loss:     {packet_loss:.2f}%")
 
     if output_path:
         results = {
@@ -127,7 +145,7 @@ def ping_host(host, count, interval, path=None, output=None):
         }
         save_results_to_file(results, output_path)
     else:
-        print("No output file specified.")
+        console.print("No output file specified.")
 
     if latencies:
 
@@ -136,7 +154,7 @@ def ping_host(host, count, interval, path=None, output=None):
         maximum = max(latencies)
 
     else:
-        print("No successful responses.")
+        console.print("No successful responses.")
 
 #monitor function
 def monitor_host(host, interval, count, path=None, output=None):
@@ -151,10 +169,10 @@ def monitor_host(host, interval, count, path=None, output=None):
     ping_command = get_ping_command(host)
     results = []
 
-    print(f"Monitoring {host} every {interval} seconds.")
+    console.print(f"Monitoring {host} every {interval} seconds.")
 
-    print("Press Ctrl+C to stop.")
-    print("-" * 35)
+    console.print("Press Ctrl+C to stop.")
+    console.print("-" * 35)
 
     checks = 0
 
@@ -167,17 +185,17 @@ def monitor_host(host, interval, count, path=None, output=None):
 
             if result.returncode == 0:
                 latency = (end - start) * 1000
-                print(f"[{checks}] ONLINE - "f"{latency:.2f} ms")
+                console.print(f"[{checks}] ONLINE - "f"{latency:.2f} ms")
                 results.append({"check": checks, "status": "online", "latency_ms": latency})
             else:
-                print(f"[{checks}] OFFLINE")
+                console.print(f"[{checks}] OFFLINE")
                 results.append({"check": checks, "status": "offline"})
             
             if count == 0 or checks < count:
                 time.sleep(interval)
     except KeyboardInterrupt:
-        print()
-        print("Monitoring stopped.")
+        console.print()
+        console.print("Monitoring stopped.")
     finally:
         if output_path:
             save_results_to_file({"host": host, "interval": interval, "checks": len(results), "results": results}, output_path)
@@ -187,23 +205,23 @@ def dns_lookup(domain, path=None, output=None):
     output_path = resolve_output_path(output, path)
     try:
         ip_address = socket.gethostbyname(domain)
-        print(f"Domain: {domain}")
-        print(f"IP Address: {ip_address}")
+        console.print(f"Domain: {domain}")
+        console.print(f"IP Address: {ip_address}")
         if output_path:
             save_results_to_file({"domain": domain, "ip_address": ip_address}, output_path)
     except socket.gaierror:
-        print(f"Failed to resolve domain: {domain}")
+        console.print(f"Failed to resolve domain: {domain}")
         if output_path:
             save_results_to_file({"domain": domain, "status": "failed"}, output_path)
 
 #save files to json
 def save_results_to_file(results, output_file):
-    output_path = pathlib.Path(output_file)
+    output_path = pathlib.Path(output_file) 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     if output_path.suffix.lower() == ".json":
         with open(output_path, "w") as f:
             json.dump(results, f, indent=4)
-        print(f"Results saved to {output_path}")
+        console.print(f"Results saved to {output_path}")
     elif output_path.suffix.lower() == ".csv":
         with open(output_path, "w", newline="") as f:
             writer = csv.writer(f)
@@ -213,9 +231,9 @@ def save_results_to_file(results, output_file):
             else:
                 for row in results:
                     writer.writerow(row)
-        print(f"Results saved to {output_path}")
+        console.print(f"Results saved to {output_path}")
     else:
-        print(f"Unsupported output format for {output_path}. Use .json or .csv.")
+        console.print(f"Unsupported output format for {output_path}. Use .json or .csv.")
 
 #commands
 if args.command == "ping":
