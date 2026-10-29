@@ -23,7 +23,7 @@ console.print("[bold red]Version: 1.0[/bold red]")
 console.print("Author: Asim")
 console.print()
 
-parser = argparse.ArgumentParser(description="NetPulse: Simple network diagnostic tool")
+parser = argparse.ArgumentParser()
 
 #subparsers for commands
 
@@ -90,11 +90,17 @@ def ping_host(host, count, interval, path=None, output=None):
     sent = 0
     received = 0
 
-    console.print(f"Starting NetPulse for {host}")
-    console.print(f"Requests: {count}")
-    console.print(f"Interval: {interval}s")
-    console.print("-" * 35)
-
+    console.print(
+        Panel(
+            f"[bold green]Target Host:[/bold green] [cyan]{host}[/cyan]\n"
+            f"[bold yellow]Requests:[/bold yellow] {count}\n"
+            f"[bold yellow]Interval:[/bold yellow] {interval}s",
+            title="[bold]Ping Check[/bold]",
+            box=box.ROUNDED,
+            border_style="cyan",
+            padding=(1, 3),
+    )
+)   
     for i in range(count):
 
         console.print(f"[{i + 1}/{count}] Checking...")

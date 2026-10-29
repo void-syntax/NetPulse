@@ -87,7 +87,6 @@ console.print(
         "RAM: [yellow]61%[/yellow]\n"
         "Диск: [red]92%[/red]",
         title="[bold]Мониторинг[/bold]",
-        subtitle="обновлено только что",
         box=box.ROUNDED,
         border_style="cyan",
         padding=(1, 3),
