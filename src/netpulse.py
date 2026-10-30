@@ -18,7 +18,7 @@ from rich.text import Text
 
 console = Console()
 
-console.print("[bold blue]NetPulse: Simple network diagnostic tool[/bold blue]")
+console.print("[blue]NetPulse: Simple network diagnostic tool[/blue]")
 console.print("[bold red]Version: 1.0[/bold red]")
 console.print("Author: Asim")
 console.print()
@@ -177,7 +177,7 @@ def monitor_host(host, interval, count, path=None, output=None):
 
     console.print(
             Panel(
-                f"[bold green]Monitoring:[/bold green] [cyan]{host}[/cyan] every {interval} seconds.\n",
+                f"[bold green]Monitoring:[/bold green] [cyan]{host}[/cyan] every {interval} seconds.\n"
                 f"[bold yellow]Press Ctrl+C to stop.[/bold yellow]",
                 title="[bold]Monitoring[/bold]",
                 box=box.ROUNDED,
@@ -216,8 +216,17 @@ def dns_lookup(domain, path=None, output=None):
     output_path = resolve_output_path(output, path)
     try:
         ip_address = socket.gethostbyname(domain)
-        console.print(f"Domain: {domain}")
-        console.print(f"IP Address: {ip_address}")
+
+        console.print(
+    Panel(
+        Group(
+            Text("Here is your IP", style="bold"),
+            Panel(f"Domain: {domain}\nIP Address: {ip_address}", border_style="red"),
+            Text("DNS Lookup completed successfully", style="italic dim"),
+        ),
+        title="DNS Lookup",
+    )
+)
         if output_path:
             save_results_to_file({"domain": domain, "ip_address": ip_address}, output_path)
     except socket.gaierror:
