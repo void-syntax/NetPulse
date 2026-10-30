@@ -38,7 +38,6 @@ ping_parser.add_argument("-c", "--count", type=int, default=4, help="Number of p
 ping_parser.add_argument("-i", "--interval", type=float, default=1.0, help="Interval between ping requests in seconds (default: 1.0)")
 ping_parser.add_argument("-o", "--output", type=str, help="Output file to save results (JSON or CSV)")
 ping_parser.add_argument("-p", "--path", type=str, help="Path to save the output file")
-
 #command for monitoring
 
 monitor_parser = subparsers.add_parser("monitor", help="Continuously monitor a host") #to monitor
@@ -47,14 +46,12 @@ monitor_parser.add_argument("-i", "--interval", type=float, default=5.0, help="I
 monitor_parser.add_argument("-o", "--output", type=str, help="Output file to save results (JSON or CSV)")
 monitor_parser.add_argument("-c", "--count", type=int, default=0, help="Number of checks to perform")
 monitor_parser.add_argument("-p", "--path", type=str, help="Path to save the output file")
-
 #dns command
 
 dns_parser = subparsers.add_parser("dns", help="Resolve a domain name") #dns
 dns_parser.add_argument("domain", type=str, help="Domain name to resolve")
 dns_parser.add_argument("-o", "--output", type=str, help="Output file to save results (JSON or CSV)") #python netpulse.py dns example.com -o results.json
 dns_parser.add_argument("-p", "--path", type=str, help="Path to save the output file")
-
 #parse the arguments
 args = parser.parse_args()
 
@@ -74,7 +71,7 @@ def resolve_output_path(output, path=None):
     if path:
         return pathlib.Path(path) / output
 
-    return pathlib.Path(output)
+    return pathlib.Path(__file__).resolve().parent.parent / "data" / output
 
 
 def ping_host(host, count, interval, path=None, output=None):
@@ -241,7 +238,7 @@ def save_results_to_file(results, output_file):
     if output_path.suffix.lower() == ".json":
         with open(output_path, "w") as f:
             json.dump(results, f, indent=4)
-        console.print(f"Results saved to {output_path}")
+        console.print(f"\nResults saved to {output_path}")
     elif output_path.suffix.lower() == ".csv":
         with open(output_path, "w", newline="") as f:
             writer = csv.writer(f)
