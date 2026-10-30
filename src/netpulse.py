@@ -1,19 +1,16 @@
-import socket
-import subprocess
 import argparse
-import time
-import statistics
-import json
 import csv
+import json
 import pathlib
 import platform
+import socket
+import statistics
+import subprocess
+import time
 
-from rich import print
 from rich import box
 from rich.console import Console, Group
 from rich.panel import Panel
-from rich.syntax import Syntax
-from rich.table import Table
 from rich.text import Text
 
 console = Console()
@@ -52,6 +49,20 @@ dns_parser = subparsers.add_parser("dns", help="Resolve a domain name") #dns
 dns_parser.add_argument("domain", type=str, help="Domain name to resolve")
 dns_parser.add_argument("-o", "--output", type=str, help="Output file to save results (JSON or CSV)") #python netpulse.py dns example.com -o results.json
 dns_parser.add_argument("-p", "--path", type=str, help="Path to save the output file")
+
+#info / ipconfig command
+info_parser = subparsers.add_parser("info", help="Get local IP, public IP, and MAC address")
+info_parser.add_argument("-o", "--output", type=str, help="Output file to save results (JSON or CSV)")
+info_parser.add_argument("-p", "--path", type=str, help="Path to save the output file")
+
+# self ping check command
+
+check_parser = subparsers.add_parser("check", help="Check internet latency to default DNS servers")
+check_parser.add_argument("-c", "--count", type=int, default=4, help="Number of ping requests (default: 4)")
+check_parser.add_argument("-i", "--interval", type=float, default=1.0, help="Interval between requests (default: 1.0)")
+check_parser.add_argument("-o", "--output", type=str, help="Output file to save results (JSON or CSV)")
+check_parser.add_argument("-p", "--path", type=str, help="Path to save the output file")
+
 #parse the arguments
 args = parser.parse_args()
 
@@ -73,6 +84,9 @@ def resolve_output_path(output, path=None):
 
     return pathlib.Path(__file__).resolve().parent.parent / "data" / output
 
+#---------------------------------------------------------------------------------------------------
+
+#ping
 
 def ping_host(host, count, interval, path=None, output=None):
     if count <= 0:
@@ -135,30 +149,32 @@ def ping_host(host, count, interval, path=None, output=None):
     console.print(f"Packets received: {received}")
     console.print(f"Packets loss:     {packet_loss:.2f}%")
 
-    if output_path:
-        results = {
-            "host": host,
-            "count": count,
-            "interval": interval,
-            "sent": sent,
-            "received": received,
-            "lost": lost,
-            "packet_loss_percent": packet_loss,
-            "latencies_ms": latencies,
-        }
-        save_results_to_file(results, output_path)
-    else:
-        console.print("No output file specified.")
-
     if latencies:
 
         average = statistics.mean(latencies)
         minimum = min(latencies)
         maximum = max(latencies)
 
+        console.print(f"Average ping: {average:.2f}")
+
     else:
         console.print("No successful responses.")
-#----------------------------------------------------------------
+
+    if output_path:
+            results = {
+                "host": host,
+                "count": count,
+                "interval": interval,
+                "sent": sent,
+                "received": received,
+                "lost": lost,
+                "packet_loss_percent": packet_loss,
+                "latencies_ms": latencies,
+            }
+            save_results_to_file(results, output_path)
+    else:
+            console.print("\nNo output file specified.")
+#----------------------------------------------------------------------------------------
 #monitor function
 def monitor_host(host, interval, count, path=None, output=None):
 
@@ -208,6 +224,56 @@ def monitor_host(host, interval, count, path=None, output=None):
         if output_path:
             save_results_to_file({"host": host, "interval": interval, "checks": len(results), "results": results}, output_path)
 
+#------------------------------------------------------------------------------------------------------------------------------------
+
+#get network info
+def get_network_info(path=None, output=None):
+    output_path = resolve_output_path(output, path)
+
+    # 1. Имя хоста
+    hostname = socket.gethostname()
+
+    # 2. Локальный IP-адрес
+    try:
+        # Трюк с фиктивным UDP-сокетом точно возвращает рабочий сетевой интерфейс
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.connect(("8.8.8.8", 80))
+            local_ip = s.getsockname()[0]
+    except Exception:
+        local_ip = "127.0.0.1"
+
+    # 3. MAC-адрес
+    raw_mac = f"{uuid.getnode():012x}"
+    mac_address = ":".join(raw_mac[i:i+2] for i in range(0, 12, 2)).upper()
+
+    # 4. Публичный (внешний) IP
+    try:
+        with urllib.request.urlopen("https://api.ipify.org", timeout=3) as resp:
+            public_ip = resp.read().decode("utf-8")
+    except Exception:
+        public_ip = "Unavailable"
+
+    info_data = {
+        "Hostname": hostname,
+        "Local IP": local_ip,
+        "Public IP": public_ip,
+        "MAC Address": mac_address,
+    }
+
+    # Красивый вывод через Rich Table
+    table = Table(title="Network Configuration", box=box.ROUNDED)
+    table.add_column("Parameter", style="cyan", no_wrap=True)
+    table.add_column("Value", style="bold green")
+
+    for key, value in info_data.items():
+        table.add_row(key, value)
+
+    console.print(table)
+
+    if output_path:
+        save_results_to_file(info_data, output_path)
+#--------------------------------------------------------------------------------------
+
 #dns
 def dns_lookup(domain, path=None, output=None):
     output_path = resolve_output_path(output, path)
@@ -230,6 +296,16 @@ def dns_lookup(domain, path=None, output=None):
         console.print(f"Failed to resolve domain: {domain}")
         if output_path:
             save_results_to_file({"domain": domain, "status": "failed"}, output_path)
+
+#---------------------------------------------------------------------------------------------
+
+#check my ping
+def check_my_ping(count=4, interval=1.0, path=None, output=None):
+    # Надежный узел для проверки задержки до магистральных провайдеров
+    target_server = "1.1.1.1"
+    console.print("[dim]Testing connection latency via Cloudflare DNS (1.1.1.1)...[/dim]")
+    ping_host(target_server, count=count, interval=interval, path=path, output=output)
+#------------------------------------------------------------------------------------------
 
 #save files to json
 def save_results_to_file(results, output_file):
@@ -259,3 +335,7 @@ elif args.command == "monitor":
     monitor_host(args.host, args.interval, args.count, path=args.path, output=args.output)
 elif args.command == "dns":
     dns_lookup(args.domain, path=args.path, output=args.output)
+elif args.command == "info":
+    get_network_info(path=args.path, output=args.output)
+elif args.command == "check":
+    check_my_ping(count=args.count, interval=args.interval, path=args.path, output=args.output)
