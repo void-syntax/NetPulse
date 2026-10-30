@@ -43,7 +43,7 @@ NetPulse uses Python's standard library together with the operating system's `pi
 When you run:
 
 ```bash
-python src/netpulse.py ping google.com
+python netpulse.py ping google.com
 ```
 
 NetPulse:
@@ -80,7 +80,7 @@ Display styled results
 The `monitor` command repeatedly checks a host at a specified interval.
 
 ```bash
-python src/netpulse.py monitor google.com -i 5
+python netpulse.py monitor google.com -i 5
 ```
 
 The host is checked every 5 seconds until the requested number of checks is completed or `Ctrl+C` is pressed.
@@ -90,7 +90,7 @@ The host is checked every 5 seconds until the requested number of checks is comp
 The `dns` command uses Python's `socket` module to resolve a domain name to an IP address.
 
 ```bash
-python src/netpulse.py dns google.com
+python netpulse.py dns google.com
 ```
 
 ---
@@ -123,37 +123,37 @@ pip install -r requirements.txt
 ### Ping a Host
 
 ```bash
-python src/netpulse.py ping google.com
+python netpulse.py ping google.com
 ```
 
 ### Specify Request Count
 
 ```bash
-python src/netpulse.py ping google.com -c 10
+python netpulse.py ping google.com -c 10
 ```
 
 ### Specify Interval
 
 ```bash
-python src/netpulse.py ping google.com -i 2
+python netpulse.py ping google.com -i 2
 ```
 
 ### Monitor a Host
 
 ```bash
-python src/netpulse.py monitor google.com
+python netpulse.py monitor google.com
 ```
 
 Monitor with a custom interval:
 
 ```bash
-python src/netpulse.py monitor google.com -i 5
+python netpulse.py monitor google.com -i 5
 ```
 
 Monitor with a specific number of checks:
 
 ```bash
-python src/netpulse.py monitor google.com -c 20
+python netpulse.py monitor google.com -c 20
 ```
 
 Press `Ctrl+C` to stop monitoring.
@@ -161,7 +161,7 @@ Press `Ctrl+C` to stop monitoring.
 ### DNS Lookup
 
 ```bash
-python src/netpulse.py dns google.com
+python netpulse.py dns google.com
 ```
 
 ### Save Results to JSON or CSV
@@ -171,21 +171,21 @@ You can export results using `-o/--output`. By default, files are saved directly
 #### JSON export
 
 ```bash
-python src/netpulse.py ping google.com -c 4 -o results.json
-python src/netpulse.py dns google.com -o dns-results.json
+python netpulse.py ping google.com -c 4 -o results.json
+python netpulse.py dns google.com -o dns-results.json
 ```
 
 #### CSV export
 
 ```bash
-python src/netpulse.py ping google.com -c 4 -o results.csv
-python src/netpulse.py monitor google.com -c 5 -i 2 -o monitor.csv
+python netpulse.py ping google.com -c 4 -o results.csv
+python netpulse.py monitor google.com -c 5 -i 2 -o monitor.csv
 ```
 
 You can also specify a custom path using `-p/--path`:
 
 ```bash
-python src/netpulse.py ping google.com -c 4 -o results.json -p ./reports
+python netpulse.py ping google.com -c 4 -o results.json -p ./reports
 ```
 
 ---
