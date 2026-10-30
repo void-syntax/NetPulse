@@ -58,7 +58,7 @@ dns_parser.add_argument("-p", "--path", type=str, help="Path to save the output 
 #parse the arguments
 args = parser.parse_args()
 
-#ping function
+#ping function ----------------------------------------------------------
 
 def get_ping_command(host):
    if platform.system() == "Windows":
@@ -161,7 +161,7 @@ def ping_host(host, count, interval, path=None, output=None):
 
     else:
         console.print("No successful responses.")
-
+#----------------------------------------------------------------
 #monitor function
 def monitor_host(host, interval, count, path=None, output=None):
 
@@ -175,11 +175,16 @@ def monitor_host(host, interval, count, path=None, output=None):
     ping_command = get_ping_command(host)
     results = []
 
-    console.print(f"Monitoring {host} every {interval} seconds.")
-
-    console.print("Press Ctrl+C to stop.")
-    console.print("-" * 35)
-
+    console.print(
+            Panel(
+                f"[bold green]Monitoring:[/bold green] [cyan]{host}[/cyan] every {interval} seconds.\n",
+                f"[bold yellow]Press Ctrl+C to stop.[/bold yellow]",
+                title="[bold]Monitoring[/bold]",
+                box=box.ROUNDED,
+                border_style="cyan",
+                padding=(1, 3),
+        )
+    )
     checks = 0
 
     try:
