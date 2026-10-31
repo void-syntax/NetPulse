@@ -50,11 +50,6 @@ dns_parser.add_argument("domain", type=str, help="Domain name to resolve")
 dns_parser.add_argument("-o", "--output", type=str, help="Output file to save results (JSON or CSV)") #python netpulse.py dns example.com -o results.json
 dns_parser.add_argument("-p", "--path", type=str, help="Path to save the output file")
 
-#info / ipconfig command
-info_parser = subparsers.add_parser("info", help="Get local IP, public IP, and MAC address")
-info_parser.add_argument("-o", "--output", type=str, help="Output file to save results (JSON or CSV)")
-info_parser.add_argument("-p", "--path", type=str, help="Path to save the output file")
-
 # self ping check command
 
 check_parser = subparsers.add_parser("check", help="Check internet latency to default DNS servers")
@@ -155,7 +150,10 @@ def ping_host(host, count, interval, path=None, output=None):
         minimum = min(latencies)
         maximum = max(latencies)
 
-        console.print(f"Average ping: {average:.2f}")
+        console.print(f"\nAverage latency: {average:.2f}")
+        console.print(f"Highest latency: {maximum:.2f}")
+        console.print(f"Lowest latency: {minimum:.2f}")
+
 
     else:
         console.print("No successful responses.")
@@ -224,54 +222,6 @@ def monitor_host(host, interval, count, path=None, output=None):
         if output_path:
             save_results_to_file({"host": host, "interval": interval, "checks": len(results), "results": results}, output_path)
 
-#------------------------------------------------------------------------------------------------------------------------------------
-
-#get network info
-def get_network_info(path=None, output=None):
-    output_path = resolve_output_path(output, path)
-
-    # 1. Имя хоста
-    hostname = socket.gethostname()
-
-    # 2. Локальный IP-адрес
-    try:
-        # Трюк с фиктивным UDP-сокетом точно возвращает рабочий сетевой интерфейс
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-            s.connect(("8.8.8.8", 80))
-            local_ip = s.getsockname()[0]
-    except Exception:
-        local_ip = "127.0.0.1"
-
-    # 3. MAC-адрес
-    raw_mac = f"{uuid.getnode():012x}"
-    mac_address = ":".join(raw_mac[i:i+2] for i in range(0, 12, 2)).upper()
-
-    # 4. Публичный (внешний) IP
-    try:
-        with urllib.request.urlopen("https://api.ipify.org", timeout=3) as resp:
-            public_ip = resp.read().decode("utf-8")
-    except Exception:
-        public_ip = "Unavailable"
-
-    info_data = {
-        "Hostname": hostname,
-        "Local IP": local_ip,
-        "Public IP": public_ip,
-        "MAC Address": mac_address,
-    }
-
-    # Красивый вывод через Rich Table
-    table = Table(title="Network Configuration", box=box.ROUNDED)
-    table.add_column("Parameter", style="cyan", no_wrap=True)
-    table.add_column("Value", style="bold green")
-
-    for key, value in info_data.items():
-        table.add_row(key, value)
-
-    console.print(table)
-
-    if output_path:
-        save_results_to_file(info_data, output_path)
 #--------------------------------------------------------------------------------------
 
 #dns
@@ -335,7 +285,5 @@ elif args.command == "monitor":
     monitor_host(args.host, args.interval, args.count, path=args.path, output=args.output)
 elif args.command == "dns":
     dns_lookup(args.domain, path=args.path, output=args.output)
-elif args.command == "info":
-    get_network_info(path=args.path, output=args.output)
 elif args.command == "check":
     check_my_ping(count=args.count, interval=args.interval, path=args.path, output=args.output)
