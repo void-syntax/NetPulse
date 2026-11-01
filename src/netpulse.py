@@ -66,7 +66,9 @@ args = parser.parse_args()
 def get_ping_command(host):
    if platform.system() == "Windows":
         return ["ping", "-n", "1", host]
-   else:
+   elif platform.system() == "Linux":
+        return ["ping", "-c", "1", host]
+   elif platform.system() == "Darwin":
         return ["ping", "-c", "1", host]
 
 
