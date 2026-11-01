@@ -33,6 +33,7 @@ ping_parser = subparsers.add_parser("ping", help="Ping a host") #ping
 ping_parser.add_argument("host", type=str, help="Host to ping")
 ping_parser.add_argument("-c", "--count", type=int, default=4, help="Number of ping requests to send (default: 4)")
 ping_parser.add_argument("-i", "--interval", type=float, default=1.0, help="Interval between ping requests in seconds (default: 1.0)")
+ping_parser.add_argument("-t", "--timeout", type=int, default=1.0, help="Timeout for each ping request in seconds (default: 1.0)")
 ping_parser.add_argument("-o", "--output", type=str, help="Output file to save results (JSON or CSV)")
 ping_parser.add_argument("-p", "--path", type=str, help="Path to save the output file")
 #command for monitoring
@@ -40,6 +41,7 @@ ping_parser.add_argument("-p", "--path", type=str, help="Path to save the output
 monitor_parser = subparsers.add_parser("monitor", help="Continuously monitor a host") #to monitor
 monitor_parser.add_argument("host", type=str, help="Target host")
 monitor_parser.add_argument("-i", "--interval", type=float, default=5.0, help="Interval between checks")
+monitor_parser.add_argument("-t", "--timeout", type=int, default=1.0, help="Timeout for each check")
 monitor_parser.add_argument("-o", "--output", type=str, help="Output file to save results (JSON or CSV)")
 monitor_parser.add_argument("-c", "--count", type=int, default=0, help="Number of checks to perform")
 monitor_parser.add_argument("-p", "--path", type=str, help="Path to save the output file")
@@ -55,6 +57,7 @@ dns_parser.add_argument("-p", "--path", type=str, help="Path to save the output 
 check_parser = subparsers.add_parser("check", help="Check internet latency to default DNS servers")
 check_parser.add_argument("-c", "--count", type=int, default=4, help="Number of ping requests (default: 4)")
 check_parser.add_argument("-i", "--interval", type=float, default=1.0, help="Interval between requests (default: 1.0)")
+check_parser.add_argument("-t", "--timeout", type=int, default=1.0, help="Timeout for each request (default: 1.0)")
 check_parser.add_argument("-o", "--output", type=str, help="Output file to save results (JSON or CSV)")
 check_parser.add_argument("-p", "--path", type=str, help="Path to save the output file")
 
@@ -63,13 +66,16 @@ args = parser.parse_args()
 
 #ping function ----------------------------------------------------------
 
-def get_ping_command(host):
-   if platform.system() == "Windows":
-        return ["ping", "-n", "1", host]
-   elif platform.system() == "Linux":
-        return ["ping", "-c", "1", host]
-   elif platform.system() == "Darwin":
-        return ["ping", "-c", "1", host]
+def get_ping_command(host, timeout=2):
+    # Windows -w and macOS -W take MILLISECONDS, Linux -W takes SECONDS
+    if platform.system() == "Windows":
+        return ["ping", "-n", "1", "-w", str(timeout * 1000), host]
+    elif platform.system() == "Linux":
+        return ["ping", "-c", "1", "-W", str(timeout), host]
+    elif platform.system() == "Darwin":
+        return ["ping", "-c", "1", "-W", str(timeout * 1000), host]
+    else:
+        raise SystemExit(f"Unsupported operating system: {platform.system()}")
 
 
 def resolve_output_path(output, path=None):
@@ -85,15 +91,18 @@ def resolve_output_path(output, path=None):
 
 #ping
 
-def ping_host(host, count, interval, path=None, output=None):
+def ping_host(host, count, interval, timeout=2, path=None, output=None):
     if count <= 0:
         parser.error("Count must be greater than 0")
 
     if interval < 0:
         parser.error("Interval cannot be negative")
 
+    if timeout <= 0:
+        parser.error("Timeout must be greater than 0")
+
     output_path = resolve_output_path(output, path)
-    ping_command = get_ping_command(host)
+    ping_command = get_ping_command(host, timeout)
     latencies = []
     sent = 0
     received = 0
@@ -102,7 +111,8 @@ def ping_host(host, count, interval, path=None, output=None):
         Panel(
             f"[bold green]Target Host:[/bold green] [cyan]{host}[/cyan]\n"
             f"[bold yellow]Requests:[/bold yellow] {count}\n"
-            f"[bold yellow]Interval:[/bold yellow] {interval}s",
+            f"[bold yellow]Interval:[/bold yellow] {interval}s\n"
+            f"[bold yellow]Timeout:[/bold yellow] {timeout}s",
             title="[bold]Ping Check[/bold]",
             box=box.ROUNDED,
             border_style="cyan",
@@ -176,7 +186,7 @@ def ping_host(host, count, interval, path=None, output=None):
             console.print("\nNo output file specified.")
 #----------------------------------------------------------------------------------------
 #monitor function
-def monitor_host(host, interval, count, path=None, output=None):
+def monitor_host(host, interval, count, timeout=2.0, path=None, output=None):
 
     if interval <= 0:
         parser.error("Interval must be greater than 0")
@@ -184,6 +194,9 @@ def monitor_host(host, interval, count, path=None, output=None):
     if count < 0:
         parser.error("Count cannot be negative")
     
+    if timeout <= 0:
+        parser.error("Timeout must be greater than 0")
+
     output_path = resolve_output_path(output, path)
     ping_command = get_ping_command(host)
     results = []
@@ -252,11 +265,10 @@ def dns_lookup(domain, path=None, output=None):
 #---------------------------------------------------------------------------------------------
 
 #check my ping
-def check_my_ping(count=4, interval=1.0, path=None, output=None):
-    # Надежный узел для проверки задержки до магистральных провайдеров
+def check_my_ping(count=4, interval=1.0, timeout=2.0, path=None, output=None):
     target_server = "1.1.1.1"
     console.print("[dim]Testing connection latency via Cloudflare DNS (1.1.1.1)...[/dim]")
-    ping_host(target_server, count=count, interval=interval, path=path, output=output)
+    ping_host(target_server, count=count, interval=interval, timeout=timeout, path=path, output=output)
 #------------------------------------------------------------------------------------------
 
 #save files to json
@@ -282,10 +294,10 @@ def save_results_to_file(results, output_file):
 
 #commands
 if args.command == "ping":
-    ping_host(args.host, args.count, args.interval, path=args.path, output=args.output)
+    ping_host(args.host, args.count, args.interval, timeout=args.timeout, path=args.path, output=args.output)
 elif args.command == "monitor":
-    monitor_host(args.host, args.interval, args.count, path=args.path, output=args.output)
+    monitor_host(args.host, args.interval, args.count, timeout=args.timeout, path=args.path, output=args.output)
 elif args.command == "dns":
     dns_lookup(args.domain, path=args.path, output=args.output)
 elif args.command == "check":
-    check_my_ping(count=args.count, interval=args.interval, path=args.path, output=args.output)
+    check_my_ping(count=args.count, interval=args.interval, timeout=args.timeout, path=args.path, output=args.output)
